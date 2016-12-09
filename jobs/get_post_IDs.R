@@ -5,7 +5,7 @@ sapply(helpers,source,.GlobalEnv)
 from_date = as.Date("2016/11/01")
 to_date = as.Date("2016/12/04")
 
-temporaryToken = "EAACEdEose0cBABpJIJRZCv3z4St6M1f3QQ2BmlSbQfDD2ysV5UHAOpogy45AU6EbYiZAHiZAHZBja5BECXQuvcoMN7ZA9x76l7xq6nO1ApW82kCvIQONNrABVbUzOUZAhlQiZB4nPrvxnKiFlnCS6rvhYIBxF97UVuqSgQv1VIbTgZDZD"
+temporaryToken = ""
 
 Barley_post_IDs <- getPostIDs(page = "katarina.barley", token = temporaryToken, since = from_date)
 

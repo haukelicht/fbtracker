@@ -1,7 +1,14 @@
 
+#' @description Get post, likes and comment data for a single facebook post
+#' @usage getPostData(post.id, token)
+#' @param page A facebook-post ID
+#' @param token A valid OAuth 2.0 personal access token
+#' @return A list of data frames with elements names `post`, `likes `comment`.
+#' * `post` has columns 'post_id', 'from_id', 'from_name', 'message', 'created_time', 'type', 'link' and 'shares_count';
+#' * `likes` has columns 'user_id' and 'user_name';
+#' * `comments` has columns 'comment_id', 'user_id', 'user_name', 'comment', 'created_time', 'like_count'.
 getPostData <- function (post.id, token) 
 {
-  
   url <- sprintf(paste0("https://graph.facebook.com/%s?fields=from,message,created_time,type,link,name,shares",
                         ",comments.summary(true).fields(id,from,message,created_time,like_count).limit(500)",
                         ",likes.summary(true).fields(id,name).limit(2000)"),
@@ -28,19 +35,14 @@ getPostData <- function (post.id, token)
   }
   
   out <- list()
-  out[["post"]] <- as.data.frame(c(content$from["id"],
-                    content[c("message", "created_time", "type", "link")],
-                    shares = ifelse(is.null(shares <- content$shares), list(0), shares["count"]),
-                    content["id"]), 
-                  stringsAsFactors = F)
-  names(out[["post"]])[c(1,6,7)] <- c("from_id", "shares_count", "post_id")
+  out[["post"]] <- makeDataDF(content)
   
-  out[["likes"]] <- as.data.frame(do.call(rbind, lapply(content$likes$data, unlist)), 
-                                  stringsAsFactors = F)
+  out[["likes"]] <- makeDataDF(content$likes)
+  
   n_likes <- ifelse(!is.null(out$likes), dim(out$likes)[1], 0)
   
-  out[["comments"]] <- as.data.frame(do.call(rbind, lapply(content$comments$data, unlist)), 
-                                     stringsAsFactors = F)
+  out[["comments"]] <- makeDataDF(content$comments)
+  
   n_comments <- ifelse(!is.null(out$comments), dim(out$comments)[1], 0)
   
   if (2000L > n_likes || 500L > n_comments) {
@@ -50,22 +52,23 @@ getPostData <- function (post.id, token)
     url_comments <- content$comments$paging$`next`
     
     if (!is.null(url_likes)) {
+      
       content <- tryCatch(callFBGraphAPI(url = url_likes, token = token), error = function(e) e)
       if ("error" %in% class(content)) {
         stop(sprintf("%s. Could not request FB Graph API.", content$message))
       }
-      out[["likes"]] <- rbind(out[["likes"]], 
-                              as.data.frame(do.call(rbind, lapply(content$data, unlist)), 
-                                            stringsAsFactors = F))
+      
+      out[["likes"]] <- rbind(out[["likes"]], makeDataDF(content))
       n_likes <- dim(out$likes)[1]
+      
       while (length(content$data) > 0 & !is.null(url <- content$paging$`next`)) {
+        
         content <- tryCatch(callFBGraphAPI(url = url, token = token), error = function(e) e)
         if ("error" %in% class(content)) {
           stop(sprintf("%s. Could not request FB Graph API.", content$message))
         }
-        out[["likes"]] <- rbind(out[["likes"]], 
-                                as.data.frame(do.call(rbind, lapply(content$data, unlist)), 
-                                              stringsAsFactors = F))
+        
+        out[["likes"]] <- rbind(out[["likes"]], makeDataDF(content))
         n_likes <- dim(out$likes)[1]
       }
     }
@@ -74,18 +77,18 @@ getPostData <- function (post.id, token)
       if ("error" %in% class(content)) {
         stop(sprintf("%s. Could not request FB Graph API.", content$message))
       }
-      out[["comments"]] <- rbind(out[["comments"]], 
-                                 as.data.frame(do.call(rbind, lapply(content$data, unlist)), 
-                                               stringsAsFactors = F))
+      
+      out[["comments"]] <- rbind(out[["comments"]], makeDataDF(content)) 
       n_comments <- dim(out$comments)[1]
+      
       while (length(content$data) > 0 & !is.null(url <- content$paging$`next`)) {
+        
         content <- tryCatch(callFBGraphAPI(url = url, token = token), error = function(e) e)
         if ("error" %in% class(content)) {
           stop(sprintf("%s. Could not request FB Graph API.", content$message))
         }
-        out[["comments"]] <- rbind(out[["comments"]], 
-                                   as.data.frame(do.call(rbind, lapply(content$data, unlist)), 
-                                                 stringsAsFactors = F))
+        
+        out[["comments"]] <- rbind(out[["comments"]], makeDataDF(content))
         n_comments <- dim(out$comments)[1]
       }
     }
@@ -97,7 +100,7 @@ getPostData <- function (post.id, token)
     }
     df
   })
-  
+
   return(out)
 }
 

@@ -8,18 +8,17 @@
 #' which combine data for all posts in vector `post.ids` (adding load date and time)
 #' @import Rfacebook::getPost
 getPostsData <- function(post.ids, token){
-  
-  require(Rfacebook)
-  
+
   output <- replicate(3, vector("list", 0L))
   names(output) <- c("Posts", "Likes", "Comments")
   
   stopifnot(is.vector(post.ids)) 
-  
+
   for (p in seq_along(post.ids)) {
+    
     post_id <- post.ids[p]
-    input <- tryCatch(Rfacebook::getPost(post_id, token = token),
-                      error = function(e) e)
+
+    input <- tryCatch(getPostData(post_id, token = token), error = function(e) e)
     
     if ("error" %in% class(input)) next
     
@@ -27,8 +26,8 @@ getPostsData <- function(post.ids, token){
       if (!is.null(df) && nrow(df) != 0) {
         df$post_id <- post_id
         if ("message" %in% names(df)) df$message <- stringi::stri_unescape_unicode(df$message)
-        df$load_date <- as.character(Sys.Date())
-        df$load_time <- as.character(format(Sys.time(), "%H:%M:%S"))
+        df$load_date <- Sys.Date()
+        df$load_time <- format(Sys.time(), "%H:%M:%S")
       } 
       df
     })
@@ -42,9 +41,10 @@ getPostsData <- function(post.ids, token){
       }
     }
     
-    rm(throughput, inherits = FALSE)
+    rm(list = c("input", "throughput"), inherits = FALSE)
   }
   
   output <- lapply(output, function(x) do.call(rbind, x))
   output
 }   
+

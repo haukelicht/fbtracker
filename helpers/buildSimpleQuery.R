@@ -1,6 +1,6 @@
 
 #' @description Build simple, i.e., non-joining sql query. 
-#' @usage buildSimpleQuery <- function(conn = con, do.query = TRUE, select = "*", distinct = FALSE, distinct.on = NULL, from.schema = NULL, from.table, where = NULL, group.by = NULL, order.by = NULL, order.descending = TRUE, limit = NULL)
+#' @usage buildSimpleQuery <- function(conn = con, do.query = TRUE, select = "*", distinct = FALSE, distinct.on = NULL, from.schema = NULL, from.table, where = NULL, group.by = NULL, order.by = NULL, order.desc = TRUE, limit = NULL)
 #' @param conn A connection object to an PostgreSQL database management system. 
 #' Must be an \code{PostgreSQLConnection} object as produced by \code{RPostgreSQL::dbConnect}.
 #' @param do.query A \code{boolean}, specifying wether built query should be get from database (default), 
@@ -55,7 +55,7 @@ buildSimpleQuery <- function(conn = con,
                      ifelse(is.null(where), "", paste("WHERE", where)), 
                      ifelse(is.null(group.by), "", paste("GROUP BY", group.by)), 
                      ifelse(is.null(order.by), "", paste("ORDER BY", order.by)), 
-                     ifelse(is.null(order.by), "", ifelse(order.descending, "desc", "asc")),
+                     ifelse(is.null(order.by), "", ifelse(order.desc, "desc", "asc")),
                      ifelse(is.null(limit), "", paste("LIMIT", as.character(limit)))) 
 
   statement <- gsub("\\s+", " ", statement)

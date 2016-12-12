@@ -29,7 +29,7 @@ getCommentsData <- function(cmnt.ids, token)
     out
   })
   
-  return(as.data.frame(do.call(rbind, out)))
+  return(as.data.frame(do.call(rbind, out), stringsAsFactors = FALSE))
 }
 
        

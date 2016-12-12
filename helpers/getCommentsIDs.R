@@ -37,10 +37,10 @@ getCommentsIDs <- function(post.id, token, last.comment.ts = NULL)
     return(vector("character", 0L)) ### change return type ?
   }
   
-  if (is.null(last.comment.ts)) {
+  if (is.null(last.comment.ts) || is.na(last.comment.ts)) {
     last.comment.ts <- tryCatch(convertFBTimestamp(content$created_time, convert.to.date = FALSE), error = function(e) e)
-    if ("error" %in% class(last.comment.tsdate)) { 
-      stop(sprintf("%s. Could not convert FB timestamps.", last.comment.tsdate$message))
+    if ("error" %in% class(last.comment.ts)) { 
+      stop(sprintf("%s. Could not convert FB timestamps.", last.comment.ts$message))
     }
   }
   

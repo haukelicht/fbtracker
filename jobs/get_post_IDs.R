@@ -21,11 +21,10 @@ statement <- paste("select from_name, from_id, id post_id, substring(created_tim
 
 LastPosts <- psql(statement)
 
-page_ids <- LastPosts$from_id
 temporaryToken = ""
 
 ## Loop over all pages 
-for (page_id in page_ids) { 
+for (LastPosts$from_id in page_ids) { 
   
   last_post_from <- unique(LastPosts$created_date)
   from_date <- ifelse(!is.null(last_post_from), 
@@ -35,6 +34,7 @@ for (page_id in page_ids) {
   cat(sprintf("Processing %s's posts since %s ...", LastPosts[LastPosts$from_id == page_id, "from_name"], from_date))
   
   ### get IDs of posts since (incl.) from_date 
+  undebug(getPostIDs)
   post_IDs <- getPostIDs(page = page_id, token = temporaryToken, since = from_date) 
   
   ### keep only IDs of posts that are not yet recorded in dbms 

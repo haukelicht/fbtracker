@@ -1,0 +1,10 @@
+./.httr-oauth
+./.RData
+./.Rhistory
+./*.Rproj
+./jobs/crt_permanent_fb_token
+
+./data/*
+./literature/*
+./organization/*
+.Rproj.user

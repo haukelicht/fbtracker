@@ -26,8 +26,10 @@ getPostsData <- function(post.ids, token){
       if (!is.null(df) && nrow(df) != 0) {
         df$post_id <- post_id
         if ("message" %in% names(df)) df$message <- stringi::stri_unescape_unicode(df$message)
-        df$load_date <- Sys.Date()
-        df$load_time <- format(Sys.time(), "%H:%M:%S")
+        date <- as.POSIXlt(Sys.time(), tz = "GMT")
+        
+        df$load_date <- format(date, "%Y-%m-%d")
+        df$load_time <- format(date, "%H:%M:%S")
       } 
       df
     })

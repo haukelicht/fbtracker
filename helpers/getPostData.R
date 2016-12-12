@@ -10,7 +10,7 @@
 getPostData <- function (post.id, token) 
 {
   url <- sprintf(paste0("https://graph.facebook.com/%s?fields=from,message,created_time,type,link,name,shares",
-                        ",comments.summary(true).fields(id,from,message,created_time,like_count).limit(500)",
+                        ",comments.summary(true).fields(id,from.fields(name,id),message,created_time,like_count).limit(500)",
                         ",likes.summary(true).fields(id,name).limit(2000)"),
                  post.id)
 
@@ -45,7 +45,7 @@ getPostData <- function (post.id, token)
   
   n_comments <- ifelse(!is.null(out$comments), dim(out$comments)[1], 0)
   
-  if (2000L > n_likes || 500L > n_comments) {
+  if (n_likes >= 2000L  || n_comments >= 500L) {
 
     url_likes <- content$likes$paging$`next`
     

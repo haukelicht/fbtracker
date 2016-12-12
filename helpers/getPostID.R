@@ -34,7 +34,7 @@ getPostID <- function (page, token, since = NULL, until = NULL)
   if (length(content$data) == 0) {
     return(vector("character", 0L))
   }
-  df <- as.data.frame(do.call(rbind, lapply(content$data, unlist)), stringsAsFactors = F)
+  df <- makeDataDF(content)
   if (!is.null(since)) {
     dates <- tryCatch(convertFBTimestamp(df$created_time, convert.to.date = TRUE), error = function(e) e)
     if ("error" %in% class(dates)) { 
@@ -71,10 +71,10 @@ getPostID <- function (page, token, since = NULL, until = NULL)
         }
       }
       
-      newdf <- as.data.frame(do.call(rbind, lapply(content$data, unlist)), stringsAsFactors = F)
+      newdf <- makeDataDF(content)
       dfList <- c(dfList, list(newdf))
       if (!is.null(since) & nrow(newdf) > 0) {
-        dates <- tryCatch(convertFBTimestamp(df$created_time, convert.to.date = TRUE), error = function(e) e)
+        dates <- tryCatch(convertFBTimestamp(newdf$created_time, convert.to.date = TRUE), error = function(e) e)
         if ("error" %in% class(dates)) { 
           stop(sprintf("%s. Could not convert FB timestamps.", dates$message))
         }

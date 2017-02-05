@@ -1,10 +1,16 @@
-./.httr-oauth
 ./.RData
+./.DS_Store
 ./.Rhistory
 ./*.Rproj
-./jobs/crt_permanent_fb_token
+./.Rproj.user
+
+./app_secrets.json
+./data/.fb_token
 
 ./data/*
+./data/backup/*
+
+./helpers/depricated/*
+
 ./literature/*
 ./organization/*
-.Rproj.user

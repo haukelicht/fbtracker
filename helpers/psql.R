@@ -1,17 +1,18 @@
 
+#' @importFrom DBI dbGetQuery
 
-psql <- function(statement = "select version()", conn = con) {
+psql <- function(statement = "select version()", conn, simplify = TRUE) { 
   
-  stopifnot(class(conn) == "PostgreSQLConnection")
-  require(DBI)
+  # stopifnot(class(conn) == "PostgreSQLConnection")
+  # require(DBI)
   
-  out <- tryCatch(dbGetQuery(conn = conn, statement),
-                  error = function (e) e)
+  out <- tryCatch(DBI::dbGetQuery(conn = conn, statement),
+                  error = function (err) err)
   
-  if ("error" %in% class(out)) {
+  if (inherits(out, "error")) 
     stop(out$message)
-  } else if (!is.null(out) && ncol(out) == 1L) {
+  else if (simplify && !is.null(out) && ncol(out) == 1L) 
     return(as.vector(out[, 1])) 
-  } 
+  else 
   out
-}
+} 

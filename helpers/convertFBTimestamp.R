@@ -45,9 +45,11 @@ convertFBTimestamp <- function(fb.timestamp,
                         warn)
   {
     if(!is.character(x)) {
-      if (warn)
+      x <- tryCatch(as.character(x), error = function(err) err)
+      if (inherits(x, "error") && warn) {
         warning(sprintf("Cannot convert. %s must be a character vector.", x))
-      return(NA_character_)
+        return(NA_character_)
+      }
     }
 
     if (convert.to.date) {

@@ -25,6 +25,7 @@ getPostsData <- function(post.ids,
   
   names(out) <- lapply(out, attr, "post_id")
   message(sprintf("Requests run time: %s", format(round(end - start, 3), nsmall = 3)))
-  out
+  
+  return(out)
 }
 

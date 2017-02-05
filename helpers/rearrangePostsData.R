@@ -35,7 +35,7 @@ rearrangePostsData <- function(x,
   
   assignSubelement(x, name = "post")
   Posts <- rbindToDf(post)
-  Posts
+
   assignSubelement(x, name = "timestamp")
   Timestamps <- rbindToDf(timestamp)
   

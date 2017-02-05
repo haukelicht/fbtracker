@@ -29,12 +29,11 @@ if (any(rmvd <- which(!page_ids %in% unname(unlist(existing_pages))))) {
 }
 
 # REQUEST DATA 
-out <- setNames(lapply(page_ids, upsertPagePostsData, token = fb_token, db.connection = con), page_ids)
+out <- setNames(lapply(page_ids, 
+                       upsertPagePostsData, 
+                       token = fb_token, 
+                       db.connection = con), 
+                page_ids)
 
+writePostsDataListToDB(x = out, conn = con, db.schema = "posts")
 
-
-str(out, 2)
-
-
-# sqlAppendTable(con, "posts.posts", , row.names = NA, ...)
-  

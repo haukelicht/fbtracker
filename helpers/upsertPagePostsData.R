@@ -1,17 +1,17 @@
 
-upsertPagePostsData <- function(page.id, 
-                               token,
-                               db.connection,
-                               days.offset = 60L,
-                               post.fields = c("from.fields(name,id)", "message", "story", "created_time", "type", "link"),
-                               likes = TRUE,
-                               likes.fields = c("id", "name"),
-                               comments = TRUE,
-                               comments.fields = c("id", "from.fields(name,id)" , "created_time", "like_count"),
-                               reactions.summary = TRUE,
-                               reactions.types = c("LIKE", "LOVE", "WOW", "HAHA", "SAD", "ANGRY", "THANKFUL"),
-                               posts.db.cols = c("post_id", "from_id", "created_time", "message", "post_type", "post_link", "load_timestamp"),
-                               post.data.db.cols = c("post_id", "load_timestamp", "likes_count", "comments_count", "shares_count",
+upsertPagePostsData <- function(page.id,
+                                token,
+                                db.connection,
+                                days.offset = 60L,
+                                post.fields = c("from.fields(name,id)", "message", "story", "created_time", "type", "link"),
+                                likes = TRUE,
+                                likes.fields = c("id", "name"),
+                                comments = TRUE,
+                                comments.fields = c("id", "from.fields(name,id)" , "created_time", "like_count"),
+                                reactions.summary = TRUE,
+                                reactions.types = c("LIKE", "LOVE", "WOW", "HAHA", "SAD", "ANGRY", "THANKFUL"),
+                                posts.db.cols = c("post_id", "from_id", "created_time", "message", "post_type", "post_link", "load_timestamp"),
+                                post.data.db.cols = c("post_id", "load_timestamp", "likes_count", "comments_count", "shares_count",
                                                      "react_like_counts", "react_love_counts", "react_wow_counts", "react_haha_counts", 
                                                      "react_sad_counts", "react_angry_counts", "react_thankful_counts", "react_total_counts")
 ){
@@ -105,6 +105,7 @@ upsertPagePostsData <- function(page.id,
       }
     }
   }
+  
   posts_not_in_db <- post_ids[!post_ids$post_id %in% recorded_posts, "post_id"]
   
   # NewPosts <- post_ids[!post_ids$post_id %in% post.ids, ]
@@ -127,8 +128,10 @@ upsertPagePostsData <- function(page.id,
     # write post, because post is not yet recorded
     out$posts <- rbind(out$posts, postData$posts[, posts.db.cols])
     out$post_data <- rbind(out$post_data, postData$posts[, post.data.db.cols])
+    
     if (likes) 
       out$post_likes <- rbind(out$post_likes, postData$post_likes)
+    
     if (comments)
       out$post_comments <- rbind(out$post_comments, postData$post_comments)
   }
@@ -144,6 +147,5 @@ upsertPagePostsData <- function(page.id,
   return(out)
 }
 
-# test <- upsertPagePostsData(page_id, fb_token, db.connection = con, days.offset = 60L)
-# str(test,1)
-
+# test <- upsertPagePostsData("1522202731410785", fb_token, db.connection = con, days.offset = 60L)
+# str(test,2)

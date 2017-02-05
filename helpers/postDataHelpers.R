@@ -35,8 +35,8 @@ makePostDf <- function(x, post.fields)
 
   out <- do.call(cbind, postData)
   names(out) <- gsub("\\.", "_", names(out))
-  if (any(idx <- grep("^type$|^link$", names(out)))) {
-    names(out)[idx] <- paste0("post_", names(out)[idx])
+  if (any(idxs <- grep("^type$|^link$", names(out)))) {
+    names(out)[idxs] <- paste0("post_", names(out)[idxs])
   }
   
   likes_c <- postData$likes$summary$total_count
@@ -46,8 +46,8 @@ makePostDf <- function(x, post.fields)
   data.frame(out,
              likes_count = ifelse(is.null(likes_c),0L,likes_c),
              comments_count = ifelse(is.null(cmnts_c),0L,cmnts_c),
-             shares_count = ifelse(is.null(shars_c),0L,shars_c),
-             stringAsFactor = FALSE)
+             shares_count = ifelse(is.null(shars_c),0L,shars_c))
+
 }
 
 #' @title Make Facebook post likes data frame.
@@ -102,8 +102,14 @@ makeLikesDf <- function(x, likes.fields)
     out <- out[likes_list_elmnts]
   }
 
-  names(out) <- gsub("\\.", "_", names(out))
+  if (any(name_idx <- which(names(out) %in% "name")))
+    names(out)[name_idx] <- "user_name"
+  
+  if (any(id_idx <- which(names(out) %in% "id" )))
+    names(out)[id_idx] <- "user_id"
 
+  names(out) <- gsub("\\.", "_", names(out))
+  
   out
 }
 
@@ -160,7 +166,9 @@ makeCommentsDf <- function(x, comments.fields)
   }
 
   names(out) <- gsub("\\.", "_", names(out))
-
+  if (any(id_idx <- which(names(out) %in% "id")))
+    names(out)[id_idx] <- "cmnt_id"
+  
   return(out)
 }
 

@@ -79,17 +79,6 @@ getPostData <- function (post.id, token,
                       error = function(err) err)
   if (inherits(content, "error"))
     stop(sprintf("%s. Could not request FB Graph API.", content$message))
-  #
-  # error <- 0
-  # while (length(content$error_code) > 0) {
-  #   cat("Error!\n")
-  #   Sys.sleep(0.5)
-  #   error <- error + 1
-  #   content <- callFBGraphAPI(url = url, token = token)
-  #   if (error == 3) {
-  #     stop(content$error_msg)
-  #   }
-  # }
 
   if ((l <- length(content)) == 0)
     stop("Post could not be found")
@@ -163,6 +152,7 @@ getPostData <- function (post.id, token,
                                    stringsAsFactors = FALSE)
 
   attr(out, "post_id") <- post.id
+  
   return(out)
 }
 

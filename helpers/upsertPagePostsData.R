@@ -1,7 +1,7 @@
 
-upsertPagePostsData <- function(page.id = "100625493385",
-                                token = fb_token,
-                                db.connection = con,
+upsertPagePostsData <- function(page.id,
+                                token,
+                                db.connection,
                                 days.offset = 60L,
                                 post.fields = c("from.fields(name,id)", "message", "story", "created_time", "type", "link"),
                                 likes = TRUE,
@@ -58,15 +58,20 @@ upsertPagePostsData <- function(page.id = "100625493385",
   
   if (length(posts_in_db) > 0){
     
-    postsDataList <- getPostsData(post.ids = posts_in_db, 
-                                  token = token,
-                                  post.fields = post.fields,
-                                  likes = likes,
-                                  likes.fields = likes.fields,
-                                  comments = comments,
-                                  comments.fields = comments.fields,
-                                  reactions.summary = reactions.summary,
-                                  reactions.types = reactions.types)  
+    postsDataList <- tryCatch(getPostsData2(post.ids = posts_in_db, 
+                                            token = token,
+                                            post.fields = post.fields,
+                                            likes = likes,
+                                            likes.fields = likes.fields,
+                                            comments = comments,
+                                            comments.fields = comments.fields,
+                                            reactions.summary = reactions.summary,
+                                            reactions.types = reactions.types),
+                              error = function(err) err)
+    if (inherits(postsDataList, "error")){
+      msg <- postsDataList$message
+      return(list(error = msg, detail = "Could not update posts in DB.", post_ids = posts_in_db))    
+    }
     
     postData <- rearrangePostsData(postsDataList, likes = likes, comments = comments)
     # str(postData, 2)
@@ -77,7 +82,7 @@ upsertPagePostsData <- function(page.id = "100625493385",
     where_this_page_id <- sprintf("load_timestamp::DATE >= to_date('%s', 'yyyy-MM-dd') AND regexp_replace(post_id, '_.*'::TEXT, ''::TEXT) LIKE '%s'",Sys.Date()-days.offset, page.id)
     
     # Process Posts Likes
-    if (likes) {
+    if (likes && nrow(postData$post_likes) > 0) {
       ## check if posts like are recorded yet
       recorded <- getSimpleQuery(conn = db.connection,
                                  select = "post_id || '_' || user_id AS c_id, post_id, user_id", 
@@ -98,7 +103,7 @@ upsertPagePostsData <- function(page.id = "100625493385",
       }
     }
     # Process Posts Comments
-    if (comments) {
+    if (comments && nrow(postData$post_comments) > 0) {
       ## check if posts comments are recorded yet
       recorded <- getSimpleQuery(conn = db.connection,
                                  select = "post_id, cmnt_id", 
@@ -115,8 +120,7 @@ upsertPagePostsData <- function(page.id = "100625493385",
       
       ## write new
       if (any(new <- which(!requested %in% recorded$cmnt_id))) {
-        # write 
-        out$post_comments <- postData$post_likes[new, ]
+        out$post_comments <- postData$post_comments[new, ]
       }
     }
   }
@@ -125,28 +129,41 @@ upsertPagePostsData <- function(page.id = "100625493385",
   
   if (length(posts_not_in_db) > 0){
     
-    postsDataList <- getPostsData(post.ids = posts_not_in_db, 
-                                  token = token,
-                                  post.fields = post.fields,
-                                  likes = likes,
-                                  likes.fields = likes.fields,
-                                  comments = comments,
-                                  comments.fields = comments.fields,
-                                  reactions.summary = reactions.summary,
-                                  reactions.types = reactions.types)  
+    postsDataList <- tryCatch(getPostsData2(post.ids = posts_not_in_db, 
+                                            token = token,
+                                            post.fields = post.fields,
+                                            likes = likes,
+                                            likes.fields = likes.fields,
+                                            comments = comments,
+                                            comments.fields = comments.fields,
+                                            reactions.summary = reactions.summary,
+                                            reactions.types = reactions.types),
+                              error = function(err) err)
+    
+    if (inherits(postsDataList, "error")){
+      msg <- postsDataList$message
+      return(list(error = msg, detail = "Could not add new posts to DB.", post_ids = posts_not_in_db))    
+    }
     
     postData <- rearrangePostsData(postsDataList, likes = likes, comments = comments)
-    # str(postData, 2)
-    
+
     # write post, because post is not yet recorded
     out$posts <- rbind(out$posts, postData$posts[, posts.db.cols])
     out$post_data <- rbind(out$post_data, postData$posts[, post.data.db.cols])
     
-    if (likes) 
-      out$post_likes <- rbind(out$post_likes, postData$post_likes)
-    
-    if (comments)
-      out$post_comments <- rbind(out$post_comments, postData$post_comments)
+    if (likes) {
+      if ("post_likes" %in% names(out))
+        out$post_likes <- rbind(out$post_likes, postData$post_likes)
+      else
+        out[["post_likes"]] <- postData$post_likes
+    }
+      
+    if (comments) {
+      if ("post_comments" %in% names(out))
+        out$post_comments <- rbind(out$post_comments, postData$post_comments)
+      else
+        out[["post_comments"]] <- postData$post_comments
+    }
   }
   
   attr(out, "page_id") <- page.id
@@ -159,6 +176,5 @@ upsertPagePostsData <- function(page.id = "100625493385",
 
   return(out)
 }
-
-# test <- upsertPagePostsData("1522202731410785", fb_token, db.connection = con, days.offset = 60L)
-# str(test,2)
+# 
+# test <- upsertPagePostsData(page.id = page_ids[31], token = fb_token, db.connection = con)

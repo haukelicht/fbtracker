@@ -1,4 +1,4 @@
-
+rm(list = ls())
 
 require(DBI)
 require(RPostgreSQL)
@@ -17,28 +17,29 @@ page_ids <- getSimpleQuery(conn = con,
                            from.table = "pages",
                            from.schema = "users")
 
-### run query to check if page is public
-# 
-# if (any(rmvd <- which(!page_ids %in% unname(unlist(existing_pages))))) {
-#   page_ids[rmvd]
-#   ## write to users.pages_rmvd
-#   page_ids <- page_ids[-rmvd]
-# }
+which(page_ids %in% "72364069062")
 
 # REQUEST DATA
-out <- setNames(lapply(page_ids, 
-                       upsertPagePostsData, 
-                       token = fb_token, 
-                       db.connection = con), 
-                page_ids)
+start <- Sys.time()
+
+out <- list()
+
+pb <- txtProgressBar(style = 3)
+for (page in page_ids) {
+  setTxtProgressBar(pb, page)
+  out[[page]] <- try(upsertPagePostsData(page, fb_token, con))
+}
+close(pb)
 
 # save backup
-saveRDS(out, "./data/backup/posts_data_20170205.rds")
+saveRDS(out, sprintf("./data/backup/posts_data_%s.rds", format(Sys.Date(), "%Y%m%d")))
+
+message("\nJob completed in ", round((td <- Sys.time() - start), 2), " ", attr(td, "units"), ".")
 
 # visual instpection
-str(out[1],2)
+str(out[1],2) 
 # NOTE that currently, 
-length(out)
+length(out) 
 
 writePostsDataListToDB(x = out[lengths(out) == 4], conn = con, db.schema = "posts")
 

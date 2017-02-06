@@ -44,7 +44,7 @@ upsertPagePostsData <- function(page.id = "100625493385",
   post_ids <- getPostIDs(page.id, token, since = Sys.Date()-days.offset)
   
   # get IDs of all post recorded in DB of page within the last 60 days
-  where_clause <- sprintf("created_time >= to_date('%s', 'yyyy-MM-dd') AND from_id LIKE '%s'",
+  where_clause <- sprintf("created_time::DATE >= to_date('%s', 'yyyy-MM-dd') AND from_id = '%s'",
                           Sys.Date()-days.offset, page.id)
   
   recorded_posts <- getSimpleQuery(conn = db.connection,
@@ -74,27 +74,26 @@ upsertPagePostsData <- function(page.id = "100625493385",
     # write post data only, because post is already recorded
     out$post_data <- postData$posts[, post.data.db.cols]
     
-    where_this_page_id = sprintf("regexp_replace(post_id, '_.*'::TEXT, ''::TEXT) LIKE '%s'", page.id)
+    where_this_page_id <- sprintf("load_timestamp::DATE >= to_date('%s', 'yyyy-MM-dd') AND regexp_replace(post_id, '_.*'::TEXT, ''::TEXT) LIKE '%s'",Sys.Date()-days.offset, page.id)
     
     # Process Posts Likes
     if (likes) {
       ## check if posts like are recorded yet
       recorded <- getSimpleQuery(conn = db.connection,
-                                 select = "post_id || '_' || user_id", 
+                                 select = "post_id || '_' || user_id AS c_id, post_id, user_id", 
                                  from.table = "post_likes",
                                  from.schema = "posts",
                                  where = where_this_page_id)  
       
-      requested <- paste(postData$post_likes$post_id, postData$post_likes$id, sep = "_")
+      requested <- paste(postData$post_likes$post_id, postData$post_likes$user_id, sep = "_")
       
       ## write removed
-      if (any(rmvd <- which(!recorded %in% requested))){
-        out[["post_likes_rmvd"]] <- postData$post_likes[rmvd, ]
+      if (any(rmvd <- which(!recorded$c_id %in% requested))){
+        out[["post_likes_rmvd"]] <- as.data.frame(c(recorded[rmvd, 2:3], load_timestamp = ts()), stringsAsFactors = F)
       }
-      
+
       ## write new
-      if (any(new <- which(!requested %in% recorded))) {
-        # write 
+      if (any(new <- which(!requested %in% recorded$c_id))) {
         out$post_likes <- postData$post_likes[new, ]
       }
     }
@@ -102,20 +101,20 @@ upsertPagePostsData <- function(page.id = "100625493385",
     if (comments) {
       ## check if posts comments are recorded yet
       recorded <- getSimpleQuery(conn = db.connection,
-                                 select = "cmnt_id", 
+                                 select = "post_id, cmnt_id", 
                                  from.table = "post_comments",
                                  from.schema = "posts",
                                  where = where_this_page_id)  
       
-      requested <- postData$post_comments$id
+      requested <- postData$post_comments$cmnt_id
       
       ## write removed
-      if (any(rmvd <- which(!recorded %in% requested))){
-        out[["post_comments_rmvd"]] <- postData$post_likes[rmvd, ]
+      if (any(rmvd <- which(!recorded$cmnt_id %in% requested))){
+        out[["post_comments_rmvd"]] <- as.data.frame(c(recorded[rmvd, ], load_timestamp = ts()), stringsAsFactors = F)
       }
       
       ## write new
-      if (any(new <- which(!requested %in% recorded))) {
+      if (any(new <- which(!requested %in% recorded$cmnt_id))) {
         # write 
         out$post_comments <- postData$post_likes[new, ]
       }

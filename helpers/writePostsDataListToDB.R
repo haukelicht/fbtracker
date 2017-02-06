@@ -19,7 +19,7 @@ writePostsDataListToDB <- function(x,
   if (inherits(set_schema, "error"))
     stop("Could not set schema to '%s'. %s", db.schema, set_schema$message)
   
-  for(rel in relations) {
+  for(rel in db.relations) {
     
     cols <- getSimpleQuery(conn, 
                            select = "column_name",

@@ -18,22 +18,39 @@ page_ids <- getSimpleQuery(conn = con,
                            from.schema = "users")
 
 ### run query to check if page is public
-url <- sprintf("https://graph.facebook.com/?ids=%s&fields=id&include_headers=FALSE", paste(page_ids, collapse = ","))
+# 
+# if (any(rmvd <- which(!page_ids %in% unname(unlist(existing_pages))))) {
+#   page_ids[rmvd]
+#   ## write to users.pages_rmvd
+#   page_ids <- page_ids[-rmvd]
+# }
 
-existing_pages <- callFBGraphAPI(url, token = fb_token, retry = 0L)
-
-if (any(rmvd <- which(!page_ids %in% unname(unlist(existing_pages))))) {
-  page_ids[rmvd]
-  ## write to users.pages_rmvd
-  page_ids <- page_ids[-rmvd]
-}
-
-# REQUEST DATA 
+# REQUEST DATA
 out <- setNames(lapply(page_ids, 
                        upsertPagePostsData, 
                        token = fb_token, 
                        db.connection = con), 
                 page_ids)
 
-writePostsDataListToDB(x = out, conn = con, db.schema = "posts")
+# save backup
+saveRDS(out, "./data/backup/posts_data_20170205.rds")
 
+# visual instpection
+str(out[1],2)
+# NOTE that currently, 
+length(out)
+
+writePostsDataListToDB(x = out[lengths(out) == 4], conn = con, db.schema = "posts")
+
+
+length(out[lengths(out) > 4])
+
+test <- out[lengths(out) > 4]
+
+reload <- setNames(lapply(names(test), 
+                       upsertPagePostsData, 
+                       token = fb_token, 
+                       db.connection = con), 
+                 names(test))
+
+str(reload, 2)

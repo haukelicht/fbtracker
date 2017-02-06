@@ -1,7 +1,7 @@
 
-upsertPagePostsData <- function(page.id,
-                                token,
-                                db.connection,
+upsertPagePostsData <- function(page.id = "100625493385",
+                                token = fb_token,
+                                db.connection = con,
                                 days.offset = 60L,
                                 post.fields = c("from.fields(name,id)", "message", "story", "created_time", "type", "link"),
                                 likes = TRUE,
@@ -25,12 +25,28 @@ upsertPagePostsData <- function(page.id,
   if (comments) 
     out[["post_comments"]] <- data.frame()
   
+  # test if page exists
+  url <- sprintf("https://graph.facebook.com/%s?fields=id", page.id)
+  
+  page_exists <- callFBGraphAPI(url, token = fb_token, retry = 0L)
+  
+  if (inherits(page_exists, "error") || is.null(page_exists$id)){
+    attr(out, "page_id") <- page.id
+    
+    end <- Sys.time()
+    
+    attr(out, "run_time") <- rt <- format(round(end - start, 3), nsmall = 3)
+    
+    attr(out, "error") <- "Page does not exist."
+  }
+  
   # get IDs and created_time of all post of page within the last 60 days
   post_ids <- getPostIDs(page.id, token, since = Sys.Date()-days.offset)
   
   # get IDs of all post recorded in DB of page within the last 60 days
   where_clause <- sprintf("created_time >= to_date('%s', 'yyyy-MM-dd') AND from_id LIKE '%s'",
                           Sys.Date()-days.offset, page.id)
+  
   recorded_posts <- getSimpleQuery(conn = db.connection,
                                    select = "post_id", 
                                    from.table = "posts",
@@ -107,8 +123,6 @@ upsertPagePostsData <- function(page.id,
   }
   
   posts_not_in_db <- post_ids[!post_ids$post_id %in% recorded_posts, "post_id"]
-  
-  # NewPosts <- post_ids[!post_ids$post_id %in% post.ids, ]
   
   if (length(posts_not_in_db) > 0){
     

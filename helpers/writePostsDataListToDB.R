@@ -1,5 +1,5 @@
-writePostsDataListToDB <- function(x, 
-                                   conn,
+writePostsDataListToDB <- function(x = out, 
+                                   conn = con,
                                    db.schema = "posts",
                                    db.relations = c("posts", 
                                                     "post_data", 
@@ -19,19 +19,20 @@ writePostsDataListToDB <- function(x,
   if (inherits(set_schema, "error"))
     stop("Could not set schema to '%s'. %s", db.schema, set_schema$message)
   
+  rel <- db.relations[1]
   for(rel in db.relations) {
     
     cols <- getSimpleQuery(conn, 
                            select = "column_name",
                            from.schema = "information_schema",
                            from.table = "columns",
-                           where = sprintf("table_name LIKE '%s'", rel)) 
+                           where = sprintf("table_name = '%s' AND table_schema = '%s'", rel, db.schema)) 
       
     assignSubelement(x, rel)
     df <- rbindToDf(get(rel))
     
     if (nrow(df) > 0) {
-      sql_write <- DBI::sqlAppendTable(conn, rel, df[, cols], row.names = FALSE)
+      sql_write <- DBI::sqlAppendTable(conn, rel, df[, cols], row.names = FALSE) 
       DBI::dbSendQuery(conn, sql_write)
     }
   }

@@ -4,7 +4,8 @@ rearrangePostsData <- function(x,
                                likes = TRUE, 
                                comments = TRUE, 
                                convert.timestamps = TRUE, 
-                               unescape.unicode = TRUE)
+                               unescape.unicode = TRUE,
+                               days.offset = 60L)
 {
   stopifnot(is.list(x))
   if (!is.logical(likes))
@@ -18,17 +19,25 @@ rearrangePostsData <- function(x,
     assign(x = name, value = lapply(x, `[[`, name), envir = parent.env(environment()))
   }
   
-  rbindToDf <- function(x, unesc.unicode = unescape.unicode, convert.ts = convert.timestamps) {
+  rbindToDf <- function(x, 
+                        unesc.unicode = unescape.unicode, 
+                        convert.ts = convert.timestamps, 
+                        offset = days.offset) 
+  {
     out <- as.data.frame(do.call(rbind, x), stringsAsFactors = FALSE)
     out$post_id <- gsub("\\..*", "", rownames(out))
     rownames(out) <- NULL
     
     if ("message" %in% names(out))
       out$message <- stringi::stri_unescape_unicode(out$message)
-    if ("created_time" %in% names(out) && convert.ts)
+    if ("created_time" %in% names(out) && convert.ts){
       out$created_time <- convertFBTimestamp(out$created_time, convert.to.date = FALSE)
+      if (!is.null(offset))
+        out <- out[format(as.POSIXlt(out$created_time), "%Y-%m-%d") >= (Sys.Date()-offset), ]
+    }
+      
     
-    out
+    out[]
   }
   
   out <- list()

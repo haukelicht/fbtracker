@@ -17,7 +17,7 @@ setCurrentSchema <- function(conn, schema)
                                  tolower(schema))
   
   if (schema_exists && !is_current_schema)
-    psql(statement = "set search_path to posts;", conn = conn)
+    psql(statement = sprintf("set search_path to %s;", schema), conn = conn)
   
   message(sprintf("Set '%s' as current_schema on DB connection.", schema))
   invisible()

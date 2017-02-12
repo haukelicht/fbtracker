@@ -5,7 +5,7 @@
 #' 
 #' @import DBI dbConnect
 #' 
-
+#' @return If connection is succesfull, a DBI connection object, defined by \code{driver.name}.
 connectToDB <- function(driver.name, db.name, credentials.list = NULL, ...)
 {
   driver <- tryCatch(eval(driver.name), error = function(err) err)

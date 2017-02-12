@@ -1,5 +1,6 @@
 
 #' @title Convert Facebook timestamp to date or time.
+#' 
 #' @description Timestamps associated with Facebook nodes
 #'   and edges have a specific format.
 #'   This function takes a vector of facebook timestamps,
@@ -22,7 +23,7 @@
 #'
 #' @return Character vector of dates (timestamps), formatted as \code{date.format} (\code{timestamp.format}).
 #'
-#' @examples
+#' @example
 #'   convertFBTimstamp(fb.timestamp = "2016-08-31T13:30:12+0000")
 convertFBTimestamp <- function(fb.timestamp,
                                convert.to.date = TRUE,

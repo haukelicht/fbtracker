@@ -3,10 +3,7 @@
 #' 
 #' @description Function sets current schema, if not already is current schema
 #' 
-#' @note Tested only on PostgreSQL Driver
-#' 
-#' @importFrom DBI 
-
+#' @note Tested only with PostgreSQL Driver.
 setCurrentSchema <- function(conn, schema) 
 {
   if(!(schema_exists <- dbExistsSchema(conn, schema)))

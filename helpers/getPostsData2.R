@@ -1,14 +1,29 @@
-#' @description Does the same as getPostsData, only faster.
+#' @title Get Facebook post data fastly.
+#'
+#' @description Does the same as getPostsData, that is, 
+#'   gets post, likes, comments and reactions data for a single facebook post, 
+#'   only faster by using API batch-request.
+#'
+#' @inherit getPostsData param details return
 #' 
+#' @usage
+#' \preformatted{
+#'  getPostData2(post.ids, token,
+#'    post.fields = c("from.fields(name,id)", "message", "created_time", "type", "link"),
+#'    likes = TRUE, likes.fields = c("id", "name"),
+#'    comments = TRUE, comments.fields = c("id", "from.fields(name,id)" , "created_time", "like_count"),
+#'    reactions.summary = TRUE, reactions.types = c("LIKE", "LOVE", "WOW", "HAHA", "SAD", "ANGRY", "THANKFUL"))
+#' }
+
 getPostsData2 <- function(post.ids,
-                         token,
-                         post.fields = c("from.fields(name,id)", "message", "story", "created_time", "type", "link"),
-                         likes = TRUE,
-                         likes.fields = c("id", "name"),
-                         comments = TRUE,
-                         comments.fields = c("id", "from.fields(name,id)" , "created_time", "like_count"),
-                         reactions.summary = TRUE,
-                         reactions.types = c("LIKE", "LOVE", "WOW", "HAHA", "SAD", "ANGRY", "THANKFUL")
+                          token,
+                          post.fields = c("from.fields(name,id)", "message", "story", "created_time", "type", "link"),
+                          likes = TRUE,
+                          likes.fields = c("id", "name"),
+                          comments = TRUE,
+                          comments.fields = c("id", "from.fields(name,id)" , "created_time", "like_count"),
+                          reactions.summary = TRUE,
+                          reactions.types = c("LIKE", "LOVE", "WOW", "HAHA", "SAD", "ANGRY", "THANKFUL")
 ){
   # helper
   returnEmtpy <- function() {
@@ -30,7 +45,6 @@ getPostsData2 <- function(post.ids,
   start <- Sys.time()
   
   # work-around wrt batch-request limit of 50 IDs
-  
   loops <- 1:(((n_posts <- length(post.ids)) %/% 50) + 1)
   
   url_base <- paste0("https://graph.facebook.com/?ids=%s&fields=",
@@ -42,11 +56,7 @@ getPostsData2 <- function(post.ids,
                      ifelse(likes, sprintf(".fields(%s).limit(2000)", paste(likes.fields, collapse = ",")),""),
                      ifelse(reactions.summary, ",reactions.fields(type)",""))
   
-  
-  # if()
-  
   start_idx <- 1L
-  
   postData <- list()
   
   for (loop in loops) {

@@ -31,19 +31,19 @@
 #'
 #' @return A named list of data frames.
 #'   \itemize{
-#'     \item "post" has columns as defined by \code{post.fields},
-#'       where subfield requests (e.g. "from.field(name,id)") are deparsed,
-#'       such that each subfield is written to its own column an subfield columns
-#'       are named like "main_subfield" (e.g. "from_id"; see \code{\link{makePostDf}})
+#'     \item 'post' has columns as defined by \code{post.fields},
+#'       where subfield requests (e.g. 'from.field(name,id)') are deparsed,
+#'       such that each subfield is written to its own column, and subfield columns
+#'       are named like 'main_subfield' (e.g. 'from_id'; see \code{\link{makePostDf}})
 #'       Also, if \code{reactions.summary = TRUE}, columns for each
-#'       \code{reactions.types} requested are added, containing post-level aggregates, i.e.,
-#'       numeric summary statistics representing count of a given reactions type.
-#'     \item "likes" has columns as defined by \code{likes.fields}
+#'       \code{reactions.types} requested are added, containing post-level aggregates, 
+#'       i.e., summary statistics representing count of a given reactions type as off request time.
+#'     \item 'likes' has columns as defined by \code{likes.fields}
 #'       (see \code{\link{makeLikesDf}})
-#'     \item "comments" has columns as defined by \code{comments.fields}
+#'     \item 'comments' has columns as defined by \code{comments.fields}
 #'       (see \code{\link{makeCommentsDf}})
-#'    \item "timestamp" has columns "date", "time", and "tz", giving the
-#'      date ("YYYY-mm-dd"), time ("HH:MM:SS") respectively timezone (GZT) when
+#'    \item 'timestamp' has columns 'timestamp', and 'tz', giving the
+#'      timestamp ("YYYY-mm-dd HH:MM:SS") and timezone (GMT) when
 #'      the post data was requested.
 #'   }
 #' @usage

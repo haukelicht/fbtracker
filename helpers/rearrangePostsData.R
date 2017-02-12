@@ -1,5 +1,44 @@
 
-
+#' @title Rearrange posts data from list of posts data lists
+#'    into list of data frames.
+#'
+#' @description Posts data requested from the Facebook Graph API is returned as
+#'   a list of lists of data frames by \code{\link{getPostsData}}, and thus 
+#'   has an unconvenient, nested data structure.
+#'   
+#'   This function turns this structure into a list object 
+#'   with data frame elements 'posts' 'post\_likes' and 'post\_comments', 
+#'   so that all post data for all posts in nested list is in the respective 
+#'   data frames and identified by 'post\_id'.
+#'   
+#' @param x A list opject of nested posts data.
+#' 
+#' @param likes Logical. Specifying whether the \code{x} contains posts' likes data.
+#'   Defaults to \code{TRUE}.
+#'     
+#' @param likes Logical. Specifying whether to rearrange posts' likes data in \code{x}.
+#'   Defaults to \code{TRUE}.
+#'   
+#' @param comments Logical. Specifying whether to rearrange posts' comments data in \code{x}.
+#'   Defaults to \code{TRUE}.
+#'
+#' @param convert.timestamps Logical. If \code{TRUE}, data frames in input having column 
+#'   'created\_time', Graph API-like timestamps are turned into conventional timestamps
+#'   with format '%Y-%m-%d %H:%M:%S'. 
+#'   Defaults to \code{TRUE}.
+#'   
+#' @param unescape.unicode Logical. If \code{TRUE}, \code{\link[stringi]{stri_unescape_unicode}} 
+#'   is applied to data frames in input that have column 'message'. 
+#'   Defaults to \code{TRUE}.
+#'  
+#' @param days.offset A positive integer scalar or \code{NULL}
+#'   If not \code{NULL}, all data in input list data frames having column 'created\_time'
+#'   that has a created time earlier than \code{days.offset} past from today is dropped.
+#'   Defautls to \code{60L}
+#'   
+#' @return A list object of data frames and elements named 'posts' 'post\_likes' and 'post\_comments'.  
+#' 
+#' @importFrom stringi stri_unescape_unicode
 rearrangePostsData <- function(x, 
                                likes = TRUE, 
                                comments = TRUE, 
@@ -36,8 +75,7 @@ rearrangePostsData <- function(x,
         out <- out[format(as.POSIXlt(out$created_time), "%Y-%m-%d") >= (Sys.Date()-offset), ]
     }
       
-    
-    out[]
+    out
   }
   
   out <- list()

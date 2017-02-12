@@ -2,43 +2,128 @@
 #' @title Update or insert posts data.  
 #' 
 #' @description Given a valid Facebook page ID, 
-#'   function requests data retroperspectively for a given amount of (n) days
-#'   for all posts posted on the page.
+#'   function requests data retroperspectively for all posts posted 
+#'   on the page within the last \emph{n} days, 
+#'   including post reactions summary, likes, and comments, if respective parameters are set to \code{TRUE}.
 #'   It then compares the requested data to the posts data for this page stored
-#'   in a PostgreSQL database, and inserts or updates posts data accordung to the 
+#'   in a PostgreSQL database, and inserts or updates posts data according to the 
 #'   current storage.
 #'   
+#' @param page.id A Facebook Graph API page ID.
+#' 
+#' @param token A valid Facebook Graph API access token.
+#' 
+#' @param db.connection A valid 'PostgreSQL' database connection object.
+#' 
+#' @param schema.name A unit-length character vector, 
+#'   specifying the schema to query DB data from.
+#'   Defaults to schema 'posts'.
+#'   
+#' @param days.offset An integer scalar, specifying the number of days for which 
+#'   to request, and insert and/or update DB posts data.
+#'   Defaults to \code{60L}, i.e., sixty days past from today.
+#'   
+#' @param post.fields A character vector, matching the fields of the Graph API post node.
+#'   Defaults to \code{c("from.fields(name,id)", "message", "story", "created_time", "type", "link")}, 
+#'   i.e., post author name and ID, post message, story, creation timestamp and type, and a link, 
+#'   if applies. 
+#'   
+#' @param likes Logical. Specifying whether to request posts' likes data.
+#'   Defaults to \code{TRUE}.
+#'   
+#' @param likes.fields A character vector, matching the fields of the Graph API likes edge.
+#'   By default fields 'id' and 'name' (user ID and name) are requested.
+#' 
+#' @param comments Logical. Specifying whether to request posts' comments data.
+#'   Defaults to \code{TRUE}.
+#'   
+#' @param comments.fields A character vector, matching the fields of the Graph API comments edge.
+#'   Defaults to \code{c("id", "from.fields(name,id)" , "created_time", "like_count")},
+#'   i.e., comment ID, comment author name and ID, comment creation timestamp 
+#'   and the count of comment likes as off time of request.
+#'   
+#' @param reactions.summary Logical. Specifying whether to request posts' reactions data.
+#'   Defaults to \code{TRUE}.
+#' 
+#' @param reactions.types A character vector, matching the reactions types specified 
+#'   in the Graph API reactions field.
+#'   Defaults to types 'LIKE', 'LOVE', 'WOW', 'HAHA', 'SAD', 'ANGRY', and 'THANKFUL'.
+#' 
+#' @param posts.db.cols A character vector, matching the column names of the DB table 'posts'.
+#'   Defautls to 'post\_id', 'from\_id', 'created\_time', 'message', 'post\_type', 
+#'   'post\_link', and 'load\_timestamp'.
+#' 
+#' @param post.data.db.cols A character vector, matching the column names of the DB table 'post\_data'.
+#'   Defaults to 'post\_id', 'load\_timestamp', 'likes\_count', 'comments\_count', 'shares\_count',
+#'   'react\_like\_counts', 'react\_love\_counts', 'react\_wow\_counts', 'react\_haha\_counts', 
+#'   'react\_sad\_counts', 'react\_angry\_counts', 'react\_thankful\_counts', and 'react\_total\_counts'.
+#'                 
 #' @details The Function proceeds as follows.
 #'   \itemize{
-#'     \item[1.] page's post IDs for the last n days are queried, and compared
-#'       to the post IDs in the database (DB) with created time within the last n days.
+#'     \item[1.] page's post IDs for the \emph{n} days between today 
+#'       and \code{days.offset} before today are queried, and compared
+#'       to the post IDs in the database (DB) with created time within the last \emph{n} days.
 #'     \item[2.]{For the set of post IDs, that are already stored in the DB,
-#'      \itemize{
-#'        \item[(i)] Post data (optionally including posts' likes and comments data) 
-#'          is requested from the Graph API and rearranged in a list of data frames, 
-#'          containing posts data, and if requested, likes and comments data for all 
+#'       \itemize{
+#'        \item[(i)] Post data is requested from the Graph API, and rearranged 
+#'          in a list of data frames, containing posts reactions summary 
+#'          statistics data, and if requested, likes and comments data for all 
 #'          post IDs in (2.).
 #'        \item[(ii)] Post summary statistics as off query date (cf. the load timestamp)
-#'          is written to the output list element 'post_data' for each post IDs in (2.).
-#'        \item[(iii)] Post summary statistics as off query date (cf. the load timestamp)
-#'          is written to the output list element 'post_data' for each post IDs in (2.).
+#'          are written to the output list element 'post\_data' with load timestamp
+#'          for each post IDs in (2.).
+#'        \item[(iii)]{If post likes are requested, too, queried user likes
+#'          are compared to the likes already stored in tables 'post\_likes' and 
+#'          'post\_likes\_rmvd' (removed post likes) in the DB for each post ID in (2.)
+#'            \itemize{
+#'              \item[(a)] If queried post ID-user ID entry is \emph{not} in the DB
+#'                (i.e. exists neither in 'post\_likes', nor in 'post\_likes\_rmvd'),
+#'                like data entry is wirtten to list output 'post\_likes' with load timestamp.
+#'              \item[(b)] If queried post ID-user ID entry exists in DB, 
+#'                no action is taken.
+#'              \item[(b)] If a post ID-user ID entry exists in 'post\_likes' in the DB,
+#'                but is not in the queried data, it is written to list output 
+#'                'post\_likes\_rmvd' with load timestamp.
+#'            }
+#'        }
+#'        \item[(iv)]A similar procedure as described in (iii) is repeated 
+#'          for post comments, if post comments data is queried, too.
+#'          The only minor difference is, that comments are uniquely identified 
+#'          by post ID-cmnt ID combinations, not necessarily by post and user ID,
+#'          for one users can comment multiple posts multiple times.  
 #'      } 
 #'     }
-#'   
+#'     \item[3.]{For the set of post IDs, that are not yet stored in the DB, that is, 
+#'       that are in the set difference of the two queries from (1.), 
+#'       \itemize{
+#'         \item[(i)] Post data is requested from the Graph API, and rearranged 
+#'          in a list of data frames, containing posts reactions summary 
+#'          statistics data, and if requested, likes and comments data for all 
+#'          post IDs in (3.).
+#'        \item[(ii)] All data is immediately appendend to the respective elements
+#'          of the output list (including load timestamp), because writing 'new'
+#'          (i.e. newly tracked) posts to the DB requires no comparison to existsing data.
+#'      }
+#'     }
+#'     \item[4.] Attributes 'page\_id' (Pade ID for which posts data is uperseted), 
+#'       'load\_timetamp' (general timestamp of API request), 
+#'       'run\_time' (total run time of function call for page ID), and 
+#'       are assigned to the output list, and the list object is returned. 
 #'   } 
-#'   Specifically,
 #'   
-#' @note Function is as of now tailored to interact with a specifc database structure.   
+#' @note Function is tailored to interact with a specifc database structure, defined
+#'   in jobs/setup_db.sql.
 #' 
-#' 
-#' 
-#' 
-#' 
-
+#' @return A list of data frames, with elements named 'posts' and 'post\_data'. 
+#'   If \code{likes} respectively \code{comments} is/are set to \code{TRUE},
+#'   data frames named 'post\_likes' and  'post\_comments' are added, too, 
+#'   and, if applies, 'post\_likes\_rmvd' and  'post\_comments\_rmvd'.
+#'   
+#'   In addition, the list has attrubites 'page\_id', 'run\_time', and 'load\_timestamp'.
 
 upsertPagePostsData <- function(page.id,
-                                token = fb_token,
-                                db.connection = con,
+                                token,
+                                db.connection,
                                 schema.name = "posts",
                                 days.offset = 60L,
                                 post.fields = c("from.fields(name,id)", "message", "story", "created_time", "type", "link"),
@@ -116,9 +201,8 @@ upsertPagePostsData <- function(page.id,
     # write post data only, because post is already recorded
     out$post_data <- postData$posts[, post.data.db.cols]
     
-    where_this_page_id <- sprintf(#"load_timestamp::DATE >= '%s'::DATE AND 
+    where_this_page_id <- sprintf(
       "regexp_replace(post_id, '_.*'::TEXT, ''::TEXT) LIKE '%s' AND post_id = ANY ('{%s}'::TEXT[])",
-                                  #Sys.Date()-days.offset, 
       page.id,paste0(post_ids$post_id, collapse = ","))
     
     # Process Posts Likes

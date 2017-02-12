@@ -20,6 +20,4 @@ for (page in page_ids) {
   out[[page]] <- try(upsertPagePostsData(page, fb_token, con, schema.name = "test"))
 }
 
-str(out, 2)
-
 writePostsDataListToDB(out, conn = con, db.schema = "test")

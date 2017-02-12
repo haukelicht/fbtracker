@@ -1,5 +1,15 @@
-writePostsDataListToDB <- function(x = out, 
-                                   conn = con,
+
+#' @title Write posts data request to DB.
+#'   
+#' @description Function takes list object with posts data, and writes it to 
+#'   tables in the corresponding DB schema.
+#'   
+#' @details Functions requires that the list elements of \code{x} are date frames,
+#'   and list elements have same names as tables in data base schema \code{db.schema}
+#'   (defined in \code{db.relations}).
+#' @importFrom DBI sqlAppendTable   
+writePostsDataListToDB <- function(x, 
+                                   conn,
                                    db.schema = "posts",
                                    db.relations = c("posts", 
                                                     "post_data", 

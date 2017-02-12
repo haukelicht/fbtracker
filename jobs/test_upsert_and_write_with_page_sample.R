@@ -15,8 +15,6 @@ con <- connectToDB(driver.name = RPostgreSQL::PostgreSQL(), db.name = "fbtracker
 
 page_ids <- readRDS("./data/pages_sample.rds")
 
-page.id = page_ids[9]
-
 out <- list()
 for (page in page_ids) {
   out[[page]] <- try(upsertPagePostsData(page, fb_token, con, schema.name = "test"))

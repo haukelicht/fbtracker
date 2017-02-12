@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS users.pages (
 );
 
 
-
 -- DROP TABLE IF EXISTS users.page_data;
 CREATE TABLE IF NOT EXISTS users.page_data (
   page_id  VARCHAR(99)
@@ -38,7 +37,7 @@ CREATE TABLE IF NOT EXISTS posts.posts (
   created_time TIMESTAMP,
   message TEXT, 
   post_type VARCHAR(15), 
-  post_link VARCHAR(300),
+  post_link VARCHAR(999),
   load_timestamp  TIMESTAMP
 );
 
@@ -90,7 +89,7 @@ CREATE TABLE IF NOT EXISTS posts.post_comments (
   created_time  TIMESTAMP,
   like_count  NUMERIC,
   load_timestamp  TIMESTAMP,
-  PRIMARY KEY (post_id,cmnt_id)
+  PRIMARY KEY (post_id,cmnt_id,load_timestamp)
 );
 
 -- Post comments that were removed
@@ -101,18 +100,6 @@ CREATE TABLE IF NOT EXISTS posts.post_comments_rmvd (
   cmnt_id  VARCHAR(99),
 --     REFERENCES posts.post_comments(post_id,cmnt_id),
   load_timestamp  TIMESTAMP,
-  PRIMARY KEY (cmnt_id,load_timestamp)
+  PRIMARY KEY ((post_idcmnt_id,load_timestamp)
 );
-
--- last recorded comment per post with created time
-CREATE VIEW posts.vw_last_post_comments
-AS 
-SELECT 
-  post_id,
-  max(cmnt_id)::VARCHAR(99) last_cmnt_id, 
-  max(created_time) created_time
-FROM posts.post_comments
-GROUP BY post_id
-HAVING max(cmnt_id) NOT IN (SELECT cmnt_id FROM posts.post_comments_rmvd);
-  
 

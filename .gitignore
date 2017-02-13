@@ -15,3 +15,8 @@
 ./literature/*
 ./organization/*
 .Rproj.user
+writeup/*
+literature/*
+organization/*
+plots/*
+helpers/depricated/*
